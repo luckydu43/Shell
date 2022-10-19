@@ -1,0 +1,1068 @@
+﻿
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<-------------------------------------------------------------------------------------->
+<------------------ LARGEUR IDEALE DE FENETRE ----------------------------------------->
+<-------------------------------------------------------------------------------------->
+<------------------ PREFERER NOTEPAD.EXE A NOTEPAD++ POUR CE FICHIER ------------------>
+<-------------------------------------------------------------------------------------->
+
+
+
+
+
+
+
+
+
+
+
+
+
++--------------+
+|groupadd stage|  Crée le groupe stage
++--------------+
+
++-------------------------------------+  Crée un utilisateur paul appartenant  
+|useradd paul -g stage -G exploitation|  au groupe stage et invité dans le 
++-------------------------------------+  groupe exploitation
+
++------------+
+|userdel paul|  Supprime l'utilisateur paul
++------------+
+
++--------------------------+  Modifie l'utilisateur paul pour lui 
+|usermod paul -e 31/12/2020|  donner une date d'expiration
++--------------------------+
+
++-----------------------+  Modifie l'utilisateur paul pour lui 
+|usermod paul -aG wheel |  donner les droits root
++-----------------------+
+
++----------------------+  Modifie le groupe principal de
+|usermod paul -g wheel |  l'utilisateur paul
++----------------------+
+
++-----------+  Permet de définir un mot de passe 
+|passwd paul|  chiffré, indispensable pour une connexion SSH.
++-----------+
+
++-----------+
+|/etc/passwd|  Fichier des utilisateurs
++-----------+
+	lucky:x:1000:1000:lucky:/home/lucky:/bin/bash
+	apache:x:48:48:Apache:/usr/share/httpd:/sbin/nologin
+	paul:x:1001:1001::/home/paul:/bin/bash
+
++--------------+
+|vim /etc/group|  Fichier des groupes
++--------------+
+	lucky:x:1000:lucky
+	vboxsf:x:990:
+	apache:x:48:
+	stage:x:1001:
+	exploitation:x:1002:paul
+	paul:x:1003:
+
++--+
+|id|	(selon l'utilisateur connecté, paul, lucky ou root)
++--+	
+	uid=1001(paul) gid=1001(stage) groupes=1001(stage),1002(exploitation)
+	contexte=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+	
+	uid=1000(lucky) gid=1000(lucky) groupes=1000(lucky),10(wheel)
+	contexte=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+	
+	uid=0(root) gid=0(root) groupes=0(root)
+	contexte=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+
++---------------+
+|ls -ldi /A* /D*|  Lecture des droits dossier
++---------------+
+256 drwxrwx---. 1 root appliA 8 17 sept. 14:09 /AppliAfs
+256 drwxrwx---. 1 root appliB 0 17 sept. 12:37 /AppliBfs
+256 drwxrwx---. 1 root appliA 0 17 sept. 12:37 /DataAfs
+256 drwxrwx---. 1 root appliB 0 17 sept. 12:37 /DataBfs
+
++-----+
+|chmod|  Gestion des autorisations
++-----+
+	--------+---------------+----------
+	Param	|Fichier	|Répertoire
+	--------+---------------+----------
+	r :	|cat		|ls	
+	w :	|vi nano	|mkdir touch rm
+	x :	|exécution	|cd
+	s :	|SUID		|
+	s :	|SGID		|SGID
+	t :	|stickybit	|SaveText (restriction sur les utilisateurs 
+					   de la catégorie "Autres", seul le 
+					   propriétaire peut supprimer le fichier)
+	rwx : octal
+	0 : -
+	1 : x
+	2 : w
+	3 : wx
+	4 : r
+	5 : rx
+	6 : rw
+	7 : rwx
+
+	Lecture des 12 bits par ls -l mais sur seulement 9 : 
+	sst - rwx - rwx - rwx
+	|||	|     |	    |
+	+-------+     |	    |
+	 +------------|	    |
+	  +-----------------|
+
++---------------------+
+|chmod g+s /repertoire|
++---------------------+
+	le bit "g" précise qu'on parle d'un groupe
+	le bit "s" permet d'associer un groupe à un répertoire
+	Quand quelqu'un écrit dans ce répertoire, le fichier garde le même propriétaire
+	mais le	groupe devient le groupe commun, rendant le fichier accessible à tout
+	le monde
+
++--------------------+
+|sudo bash == sudo -s|
++--------------------+
+
++-----+
+|ps -f|
++-----+
+	UID        PID  PPID  C STIME TTY          TIME CMD
+	root      2979  2588  0 10:12 pts/0    00:00:00 sudo bash
+	root      2986  2979  0 10:12 pts/0    00:00:00 bash
+	root      4462  2986  0 12:05 pts/0    00:00:00 ps -f
+
+	Un process -bash est un shell de connexion
+	Un process bash est un shell interactif
+	.bash_profile n'impacte que les shells de connexion
+
++-------------+  Ceci est un exemple de contenu de .bashrc 
+|vim ~/.bashrc|  qui lui, impacte tous les shells
++-------------+
+	PATH=$PATH:.
+	PS1='Je m"appelle pelle':$PWD' $ '
+	jolipath()
+	{
+	echo "Liste des répertoires de recherche des commandes :"
+	echo $PATH | tr ":" "\n"
+	}
+	alias mount='mount |column -t' # un mount en colonnes
+	alias rm='rm -i'
+
+	jolipath
+
++------------------+
+|vim ~/.bash_logout|  Ceci est un exemple de contenu de ce fichier.
++------------------+
+	echo "QUOI ? TU ME QUITTES COMME CA ?" ;
+	sleep 3
+
++-------+
+|cd /dev|  Ce répertoire contient tous les périphériques. "Devices".
++-------+
+	+---------+
+	|ls -l sda|  sda est un fichier représentant le disque éponyme.
+	+---------+
+	brw-rw----. 1 root disk 8, 0 14 sept. 16:19 sda
+		type b, "buffer", on y écrit en différé.
+		La taille n'est pas indiquée ici.
+	+----------+
+	|ls -l tty1|  tty1 est un fichier représentant le terminal éponyme.
+	+----------+
+	crw--w----. 1 root tty 4, 1 14 sept. 16:19 tty1
+		type c, on communique en direct.
+		La taille n'est pas indiquée non plus ici.
+
++-----+
+|lsblk|	 Donne une arborescence des partitions (ici, CentOS1)
++-----+
+	NAME            MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+	sda               8:0    0 15,8G  0 disk
+	├─sda1            8:1    0  500M  0 part /boot
+	└─sda2            8:2    0 15,3G  0 part
+	  ├─centos-root 253:0    0 13,7G  0 lvm  /
+	  └─centos-swap 253:1    0  1,6G  0 lvm  [SWAP]
+	sdb               8:16   0   12G  0 disk
+	├─sdb1            8:17   0  2,4G  0 part
+	├─sdb2            8:18   0  2,4G  0 part /fssysd
+	├─sdb3            8:19   0  2,4G  0 part
+	├─sdb4            8:20   0    1K  0 part
+	├─sdb5            8:21   0  2,4G  0 part /home/paul/repertoireDeMontage
+	└─sdb6            8:22   0  2,4G  0 part /appli-cation
+	sdc               8:32   0   12G  0 disk
+	├─sdc1            8:33   0    6G  0 part
+	│ └─vg01-lv01   253:2    0    2G  0 lvm
+	└─sdc2            8:34   0    6G  0 part
+	sdd               8:48   0   12G  0 disk
+	sr0              11:0    1 1024M  0 rom
+
++----------------------+
+|df -hT | grep -v tmpfs|  Liste les volumes avec un filtre sur les "tmpfs" inutiles
++----------------------+
+	Sur CentOS1 :
+		Sys. de fichiers        Type     Taille Utilisé Dispo Uti% Monté sur
+		/dev/mapper/centos-root xfs         14G    6,0G  7,7G  44% /
+		/dev/sdb2               btrfs      2,4G     17M  2,2G   1% /fssysd
+		/dev/sdb6               btrfs      2,4G     17M  2,2G   1% /appli1
+		/dev/sdb5               xfs        2,4G     33M  2,4G   2% /home/paul/e
+		/dev/sda1               xfs        497M    186M  311M  38% /boot
+	Sur CentOS 2 :
+		Sys. de fichiers        Type     Taille Utilisé Dispo Uti% Monté sur
+		/dev/mapper/centos-root xfs        9,3G    4,7G  4,7G  50% /
+		/dev/sda1               ext4       477M    163M  285M  37% /boot
+		/dev/mapper/centos-var  xfs        3,9G    423M  3,5G  11% /var
+		/dev/mapper/centos-tmp  xfs        2,0G     34M  2,0G   2% /tmp
+		/dev/mapper/centos-home xfs        3,1G    118M  3,0G   4% /home
+	Sur Mint :
+		Sys. de fichiers	Type     Taille Utilisé Dispo Uti% Monté sur
+		/dev/sda2        	btrfs       17G    5,7G  8,3G  41% /
+		/dev/sda7        	btrfs      6,6G     57M  6,1G   1% /home
+		/dev/sda1        	btrfs      476M    206M  194M  52% /boot
+		/dev/sda6        	btrfs      1,9G    4,1M  1,7G   1% /tmp
+		/dev/sda5        	btrfs      3,8G    1,1G  2,2G  34% /var
+
++--------------------+
+|cat /proc/partitions|	Liste les partitions  (ici, CentOS1)
++--------------------+
+	major     minor  #blocks name
+	   8       16   12582912 sdb
+	   8       17    2516378 sdb1
+	   8       18    2516377 sdb2
+	   8       19    2516377 sdb3
+	   8       20          1 sdb4
+	   8       21    2515353 sdb5
+	   8       22    2515353 sdb6
+	   8        0   16516552 sda
+	   8        1     512000 sda1
+	   8        2   16003072 sda2
+	   8       48   12582912 sdd
+	   8       32   12582912 sdc
+	   8       33    6290944 sdc1
+	   8       34    6290943 sdc2
+	  11        0    1048575 sr0
+	 253        0   14303232 dm-0
+	 253        1    1650688 dm-1
+	 253        2    2113536 dm-2
+
++------------+
+|dmesg | less|	Liste tous les messages du noyau
++------------+
+	On y trouve les disques, voir juste en-dessous.
+	Un "man dmesg" est pas mal pour appréhender la commande
+
++-----------------+
+|dmesg | grep disk|  Liste tous les messages du noyau concernant les disques
++-----------------+
+	[    1.141192] systemd[1]: Running in initial RAM disk.
+	[    2.232136] sd 2:0:0:0: [sda] Attached SCSI disk
+
++---------------+
+|fdisk /dev/sdb/| SELECT DISK
++---------------+
+	+----------------------------+
+	|Commande (m pour l'aide) : g|  CLEAN mais en mode GPT
+	+----------------------------+
+	Building a new GPT disklabel (GUID: 81C728E0-1177-4545-B7B8-E1B232690DA7)
+	
+	+----------------------------+
+	|Commande (m pour l'aide) : o|	CLEAN mais en mode MBR
+	+----------------------------+
+	Construction d'une nouvelle étiquette pour disque de type DOS avec identifiant
+	de disque 0x81975641.	
+
+	+----------------------------+
+	|Commande (m pour l'aide) : v|
+	+----------------------------+
+	25165823 secteurs de 512 octets non alloués restant
+
+	+----------------------------+
+	|Commande (m pour l'aide) : p|	DETAIL DISK
+	+----------------------------+
+	Disque /dev/sdb : 12.9 Go, 12884901888 octets, 25165824 secteurs
+	Unités = secteur de 1 × 512 = 512 octets
+	Taille de secteur (logique / physique) : 512 octets / 512 octets
+	taille d'E/S (minimale / optimale) : 512 octets / 512 octets
+	Type d'étiquette de disque : dos
+	Identifiant de disque : 0x340323d5
+	
+	Périphérique Amorçage  Début         Fin      Blocs    Id. Système
+	/dev/sdb1            2048     5034803     2516378   83  Linux
+	/dev/sdb2         5034804    10067558     2516377+  83  Linux
+	/dev/sdb3        10067559    15100313     2516377+  83  Linux
+	/dev/sdb4        15100314    25165823     5032755    5  Extended
+	/dev/sdb5        15102362    20133068     2515353+  83  Linux
+	/dev/sdb6        20135117    25165823     2515353+  83  Linux
+
+	+----------------------------+
+	|Commande (m pour l'aide) : n|	CREATE
+	+----------------------------+
+	Type de partition :
+	   p   primaire (0 primaire(s), 0 étendue(s), 4 libre(s))
+	  e   étendue
+		+----------------------------+
+		|Sélection (p par défaut) : p|	CREATE PRIMARY PARTITION
+		+----------------------------+
+		Numéro de partition (1-4, 1 par défaut) : 1
+		Premier secteur (2048-25165823, 2048 par défaut) : 2048
+		Dernier secteur, +secteur ou +taille{K,M,G} (2048-25165823, 25165823 
+		par défaut) :
+
+		   0 - 10	     2048 - 25165823
+		0+(10-0)/5*1	2048+(25165823-2048)/5*1 = 2048 + 5032755  = 5034803
+		0+(10-0)/5*2	2048+(25165823-2048)/5*2 = 2048 + 10065510 = 10067558
+		0+(10-0)/5*3	2048+(25165823-2048)/5*3 = 2048 + 15098265 = 15100313
+		0+(10-0)/5*4	2048+(25165823-2048)/5*4 = 2048 + 20131020 = 20133068
+		0+(10-0)/5*5	2048+(25165823-2048)/5*5 = 2048 + 25163775 = 25165823
+
+	+----------------------------+
+	|Commande (m pour l'aide) : w|  APPLY CHANGES
+	+----------------------------+
+	La table de partitions a été altérée.
+	Appel d'ioctl() pour relire la table de partitions.
+	Synchronisation des disques.
+
++---------------------------------------+
+|vgcreate -s 24 vg01 /dev/sdc1 /dev/sdc2|  Crée un groupe de volumes.
++---------------------------------------+  24Mo de cache pour 24Go de volumes
+	Physical volume "/dev/sdc1" successfully created.
+	Physical volume "/dev/sdc2" successfully created.
+	Volume group "vg01" successfully created
+
++-------------+
+|vgremove vg01|  Supprime un groupe de volumes.
++-------------+
+	Do you really want to remove volume group "vg01" containing 2 logical volumes?
+	[y/n]: y
+	Do you really want to remove active logical volume vg01/lv01? [y/n]: y
+	  Logical volume "lv01" successfully removed
+	Do you really want to remove active logical volume vg01/lv02? [y/n]: y
+	  Logical volume "lv02" successfully removed
+	  Volume group "vg01" successfully removed
++------+
+|vgscan|  Affiche tous les groupes de volumes.
++------+
+	Reading volume groups from cache.
+	Found volume group "vg01" using metadata type lvm2
+
++--------------+
+|vgdisplay vg01|  Donne les détails du groupe de volumes vg01
++--------------+
+	--- Volume group ---
+	VG Name               vg01
+	System ID
+	Format                lvm2
+	Metadata Areas        2
+	Metadata Sequence No  1
+	VG Access             read/write
+	VG Status             resizable
+	MAX LV                0
+	Cur LV                0
+	Open LV               0
+	Max PV                0
+	Cur PV                2
+	Act PV                2
+	VG Size               11,95 GiB
+	PE Size               24,00 MiB
+	Total PE              510
+	Alloc PE / Size       0 / 0
+	Free  PE / Size       510 / 11,95 GiB
+	VG UUID               vtfmli-LepK-dCzP-8s6R-G42G-db98-LbgMp5
+
++-------------------------------------------+  Crée le volume logique lv01 de 2.4Go
+|lvcreate -L 2.4G vg01 /dev/sdc[1-2] -n lv01|  dans le groupe de volumes vg01
++-------------------------------------------+  sur les partitions sdc1 et sdc2
+	Logical volume "lv01" created.
+
++-------------------------+
+|mkfs.btrfs /dev/vg01/lv01|  Formater un volume logique
++-------------------------+
+	btrfs-progs v4.9.1
+	See http://btrfs.wiki.kernel.org for more information.
+	
+	Label:              (null)
+	UUID:               052947df-1249-4b81-9754-0a724c838871
+	Node size:          16384
+	Sector size:        4096
+	Filesystem size:    2.02GiB
+	Block group profiles:
+	  Data:             single            8.00MiB
+	  Metadata:         DUP             103.19MiB
+	  System:           DUP               8.00MiB
+	SSD detected:       no
+	Incompat features:  extref, skinny-metadata
+	Number of devices:  1
+	Devices:
+	   ID        SIZE  PATH
+	    1     2.02GiB  /dev/vg01/lv01
+
++---+
+|pvs|  Affiche la liste des volumes physiques de LVM
++---+
+	PV         VG     Fmt  Attr PSize   PFree
+	/dev/sda2  centos lvm2 a--  <15,26g 44,00m
+	/dev/sdc1  vg01   lvm2 a--   <5,98g <1,95g
+	/dev/sdc2  vg01   lvm2 a--   <5,98g <5,98g
+	/dev/sdd   vg02   lvm2 a--   11,99g 11,99g
+
++--------------+  Affiche les détails des volumes logiques du 
+|lvdisplay vg01|  groupe de volumes vg01
++--------------+
+	--- Logical volume ---
+	LV Path                /dev/vg01/lv01
+	LV Name                lv01
+	VG Name                vg01
+	LV UUID                RRB0ow-PsVq-wluz-KJPo-bVpL-PGf2-uct4zA
+	LV Write Access        read/write
+	LV Creation host, time u43, 2020-09-15 11:26:52 +0200
+	LV Status              available
+	# open                 0
+	LV Size                <2,02 GiB
+	Current LE             86
+	Segments               1
+	Allocation             inherit
+	Read ahead sectors     auto
+	- currently set to     8192
+	Block device           253:2
+
++-----------------+
+|stat /usr/bin/zip|  Affiche les informations sur la structure d'un fichier donné
++-----------------+
+	Fichier : « /usr/bin/zip »
+	Taille : 215840      Blocs : 424        Blocs d'E/S : 4096   fichier
+	Périphérique : fd00h/64768d     Inœud : 16849209    Liens : 1
+	Accès : (0755/-rwxr-xr-x)  UID : (    0/    root)   GID : (    0/    root)
+	Contexte : system_u:object_r:bin_t:s0
+	Accès : 2016-11-05 17:49:54.000000000 +0100	(dernière lecture)
+	Modif. : 2016-11-05 17:49:54.000000000 +0100	(dernière modif du CONTENU)
+	Changt : 2020-09-14 12:05:21.862416768 +0200	(dernière modif du CONTENANT)
+	Créé : -
+
++----+
+|fsck|  file-system check
++----+
+
++-------------------+ afficher les informations contenues dans 
+|ls -lia /home/lucky| l'inode de chaque fichier listé. Ici, l'option
++-------------------+ "a" liste également les fichiers cachés
+	total 64
+	 3961571 drwx------. 15 lucky lucky 4096 15 sept. 10:11 .
+	50332299 drwxr-xr-x.  7 root  root    61 14 sept. 15:58 ..
+	 3961605 -rw-------.  1 lucky lucky  939 15 sept. 10:04 .bash_history
+	 3961572 -rw-r--r--.  1 lucky lucky   18  5 mars   2015 .bash_logout
+	 3961573 -rw-r--r--.  1 lucky lucky  193  5 mars   2015 .bash_profile
+	 3961574 -rw-r--r--.  1 lucky lucky  231  5 mars   2015 .bashrc
+	53607713 drwxr-xr-x.  2 lucky lucky    6 14 sept. 11:14 Bureau
+	18766883 drwx------. 15 lucky lucky 4096 14 sept. 16:20 .cache
+	53607712 drwxr-xr-x. 15 lucky lucky 4096 15 sept. 09:04 .config
+	17931392 drwx------.  3 lucky lucky   24 14 sept. 15:53 .dbus
+	53607714 drwxr-xr-x.  2 lucky lucky    6 14 sept. 11:14 Documents
+	 3961603 -rw-------.  1 lucky lucky   16 14 sept. 11:14 .esd_auth
+	 3961604 -rw-------.  1 lucky lucky 2484 15 sept. 10:11 .ICEauthority
+	18766885 drwxr-xr-x.  2 lucky lucky    6 14 sept. 11:14 Images
+	53607719 drwx------.  3 lucky lucky   18 14 sept. 11:14 .local
+	18766884 drwxr-xr-x.  2 lucky lucky    6 14 sept. 11:14 Modèles
+	18768317 drwxr-xr-x.  4 lucky lucky   37 14 sept. 10:50 .mozilla
+	 3961602 drwxr-xr-x.  2 lucky lucky    6 14 sept. 11:14 Musique
+	37985626 drwxr-xr-x.  2 lucky lucky    6 14 sept. 11:14 Public
+	 3961614 -rw-------.  1 lucky lucky   96 14 sept. 15:53 .serverauth.2093
+	 3961601 drwxr-xr-x.  2 lucky lucky    6 14 sept. 11:14 Téléchargements
+	 3961584 -rw-r-----.  1 lucky lucky    5 15 sept. 10:11 .vboxclient-clipbod.pid
+	 3961612 -rw-r-----.  1 lucky lucky    5 15 sept. 10:11 .vboxclient-display.pid
+	 3961616 -rw-r-----.  1 lucky lucky    5 15 sept. 10:11 .vboxclient-drgndrp.pid
+	 3961615 -rw-r-----.  1 lucky lucky    5 15 sept. 10:11 .vboxclient-seamlss.pid
+	37985627 drwxr-xr-x.  2 lucky lucky    6 14 sept. 11:14 Vidéos
+	 3961568 -rw-------.  1 lucky lucky  790 14 sept. 14:41 .viminfo
+	 3961613 -rw-------.  1 lucky lucky   48 14 sept. 15:53 .Xauthority
+
++--------------------+
+|mkfs.btrfs /dev/sdb2|  Formate le volume sdb2 en btrfs
++--------------------+
+
++-----------------------+
+|mount /dev/sdb1 /appli1|  Monte le volume sdb1 dans le répertoire appli1
++-----------------------+
+
++--------------+
+|journalctl -xb|  Journal de Systemd chargé en mémoire. Ce qui persiste sur disque
++--------------+  se trouve dans /var/log/
+
++-------------+
+|vim etc/fstab|  Fichier des points de montage
++-------------+
+	/dev/mapper/centos-root /                       xfs     defaults        0 0
+	UUID=59b999f7-9464-414d-84f2-c4363f9e0b1a /boot xfs	defaults        0 0
+	/dev/mapper/centos-swap swap                    swap    defaults        0 0
+	/dev/sdb5 /home/paul/repertoireDeMontage        xfs     defaults        0 0
+	/dev/sdb6 /application                          btrfs   defaults        0 0
+
++---------+
+|systemctl|  Liste les processus actifs. 
++---------+  systemctl -a liste également les processus inactifs.
+
++----------------------+
+|systemctl enable crond|  Active un processus
++----------------------+
+	Created symlink from /etc/systemd/system/multi-user.target.wants/crond.service
+	to /usr/lib/systemd/system/crond.service.
+
++-----------------------+
+|systemctl disable crond|  Désactive un processus
++-----------------------+
+	Removed symlink /etc/systemd/system/multi-user.target.wants/crond.service.
+
++--------------------+
+|systemctl stop crond|  Arrête un processus
++--------------------+
+
++---------------------+
+|systemctl start crond|  Démarre un processus
++---------------------+
+
++----------------------+
+|systemctl status crond|  Affiche l'état d'un processus
++----------------------+
+	● crond.service - Command Scheduler
+	   Loaded: loaded (/usr/lib/systemd/system/crond.service; disabled; vendor
+	preset: enabled)
+	   Active: active (running) since mer. 2020-09-16 08:54:32 CEST; 40min ago
+	 Main PID: 1305 (crond)
+	   CGroup: /system.slice/crond.service
+	           └─1305 /usr/sbin/crond -n
+	
+	sept. 16 08:54:32 u43 systemd[1]: Started Command Scheduler.
+	sept. 16 08:54:32 u43 crond[1305]: (CRON) INFO (RANDOM_DELAY will be scaled
+	with factor...d.)
+	sept. 16 08:54:33 u43 crond[1305]: (CRON) INFO (running with inotify support)
+	Hint: Some lines were ellipsized, use -l to show in full.
+
++--------------------------------------+  Mets à jour Grub après avoir touché
+|grub2-mkconfig -o /boot/grub2/grub.cfg|  aux fichiers de conf de Grub
++--------------------------------------+  tels que /etc/default/grub
+	Generating grub configuration file ...
+	Found linux image: /boot/vmlinuz-3.10.0-1127.19.1.el7.x86_64
+	Found initrd image: /boot/initramfs-3.10.0-1127.19.1.el7.x86_64.img
+	Found linux image: /boot/vmlinuz-3.10.0-229.el7.x86_64
+	Found initrd image: /boot/initramfs-3.10.0-229.el7.x86_64.img
+	Found linux image: /boot/vmlinuz-0-rescue-368ac17fe2eb47108b839fe481d326fa
+	Found initrd image: /boot/initramfs-0-rescue-368ac17fe2eb47108b839f326fa.img
+	done
+
++------------------------------------+  Creation d'un service de montage 
+|vim /etc/systemd/system/fssysd.mount|  par Systemd
++------------------------------------+
+	[Unit]
+	Description= FS /fssysd
+	
+	[Mount]
+	What=/dev/sdb2
+	Where=/fssysd
+	Type=btrfs
+	Options=defaults
+	
+	[Install]
+	WantedBy=multi-user.target
+
+		Après un "systemctl enable fssysd.mount" puis un "reboot now" :
+		- la commande "lsblk" sort bien : 
+		├─sdb2            8:18   0  2,4G  0 part /fssysd
+		- la commande "df -Th | grep - v tmpfs" me sort bien :
+		/dev/sdb2               btrfs      2,4G     17M  2,2G   1% /fssysd
+
++-------------------------------+
+|Procédure pétardage du mdp root| Inapplicable à distance !
++-------------------------------+
+	Au moment du boot, taper "e" pour éditer la configuration de démarrage.
+	Aller sur la ligne commençant par linux16 et ajouter "rd.break" à la fin
+	Faire "CTRL + X" pour appliquer la modif
+	On obtient ceci :
+		switch_root:/# mount -oremount, rw /sysroot
+		switch_root:/# chroot /sysroot
+		sh-4.2#
+
+	A partir de là c'est openbar, notamment
+		sh-4.2# passwd root
+		Changement de mot de passe pour l'utilisateur root.
+		passd : mise à jour réussie de tous les jetons d'authentification
+	Ou encore
+		sh-4.2# echo newmdp | passwd --stdin root
+		Changement de mot de passe pour l'utilisateur root.
+		passd : mise à jour réussie de tous les jetons d'authentification
+	On détend SELinux 
+		sh-4.2# touch /.autorelabel
+	go reboot :
+		sh-4.2# exit
+		switch_root:/# exit
+		logout
+
++--------------------------------------------------+
+|EN CAS DE PANIQUE QUAND IL FAUT DESACTIVER SELINUX|
++--------------------------------------------------+
+	Déjà, un peu de lecture : https://blog.microlinux.fr/selinux/
+	
+	Si j'ai la main sur le serveur en SSH : setenforce 0
+
+	Si je n'ai pas la main sur le serveur mais que j'y ai accès physiquement :
+		Au moment du boot, taper "e" pour éditer la configuration de démarrage.
+		Aller sur la ligne commençant par linux16, ajouter "rd.break" à la fin
+		Faire "CTRL + X" pour appliquer la modif
+		On obtient ceci :
+			switch_root:/# mount -oremount, rw /sysroot
+			switch_root:/# chroot /sysroot
+			sh-4.2#
+
+		A partir de là c'est openbar
+			sh-4.2# vim /etc/selinux/config
+				définir SELINUX à disabled au lieu de enforcing
+		reboot :
+			sh-4.2# exit
+			switch_root:/# exit
+			logout
+
++---------+
+|pstree -p|  Affichage de l'arborescence des processus. 
++---------+  Inadapté pour grep, préférer ps seul
+
++-+
+|w|
++-+
+	 11:29:25 up 11 min,  2 users,  load average: 0,00, 0,12, 0,13
+	USER     TTY      FROM         LOGIN@   IDLE   JCPU   PCPU WHAT
+	lucky    :0       :0           11:20   ?xdm?  18.89s  0.15s /usr/libexec/gnome
+	lucky    pts/0    10.20.30.128 11:20    5.00s  0.05s  0.00s w
+
++------------------------+
+|cat /var/spool/cron/root|  fichier d'une tâche programmée
++------------------------+
+	# DO NOT EDIT THIS FILE - edit the master and reinstall.
+	# (/tmp/crontab.2879 installed on Mon Jan 2 18:28:47 2015)
+	# (Cron version -- $Id: crontab.c,v 2.13 1994/01/17 03:20:37 vixie Exp $)
+	PATH=/bin:/usr/bin
+	0 15   * * Mon-Fri wall % Il est l'heure de la pause
+	0 8,12 * * 1-5     rm /applix/log/*
+	| |    | | |       +--- commande à exécuter
+	| |    | | +----------- jour de la semaine (0 à 6, 0 = dimanche)
+	| |    | +------------- mois de l'année (1 à 12)
+	| |    +--------------- jour du mois (1 à 31)
+	| +-------------------- heure (0 à 23)
+	+---------------------- minute (0 à 59)
+
++-------------------------------+
+|echo "" >> ls /appli1 | grep yo| Efface le contenu de tous les fichiers contenant la 
++-------------------------------+ chaine "yo" dans leur nom, dans le répertoire /appli1
+
++------------------------------------------+
+|tar -cvf /appli-cation/backup_appli1.tar .|  Création d'une archive
++------------------------------------------+
+
++-------------------------+
+|tar tvf backup_appli1.tar|  Visualisation d'une archive
++-------------------------+
+	drwxr-xr-x root/root         0 2020-09-16 13:56 appli1/
+	-rw-r--r-- root/root     12822 2020-09-15 15:10 appli1/yo10
+	-rw-r--r-- root/root     12822 2020-09-15 15:10 appli1/yolo
+	-rw-r--r-- root/root     12822 2020-09-15 15:10 appli1/yolo1
+	-rw-r--r-- root/root     12822 2020-09-15 15:10 appli1/yolo2
+	-rw-r--r-- root/root     12822 2020-09-15 15:10 appli1/yolo3
+	-rw-r--r-- root/root     12822 2020-09-15 15:10 appli1/yolo4
+	-rw-r--r-- root/root     12822 2020-09-15 15:10 appli1/yolo5
+	-rw-r--r-- root/root     12822 2020-09-15 15:10 appli1/yolo6
+	-rw-r--r-- root/root     12822 2020-09-15 15:10 appli1/yolo7
+	-rw-r--r-- root/root         0 2020-09-16 12:01 appli1/yolo8
+	-rw-r--r-- root/root     12822 2020-09-15 15:10 appli1/yolo9
+	-rw-r--r-- root/root    143360 2020-09-16 14:21 appli1/ls
+
++--------------------------+
+|tar -xvf backup_appli1.tar| Extraction d'une archive
++--------------------------+
+
++--------------------------------+
+|yum (CentOS 7) == dnf (CentOS 8)|  La commande yum reste toutefois comme lien vers dnf 
++--------------------------------+  sur CentOS 8
+
++------------+
+|whatis httpd|  QUOI QUE C'EST HTTPD ?
++------------+
+	httpd (8)            - Serveur Apache du protocole de transfert hypertexte
++-------------+
+|whereis httpd|  OK. MAIS QUOI QU'OU C'EST CE HTTPD ?
++-------------+
+	httpd: /usr/sbin/httpd /usr/lib64/httpd /etc/httpd /usr/share/httpd 
+	/usr/share/man/man8/httpd.8.gz
++--------------------+
+|file /usr/sbin/httpd|  Ici, le répertoire d'install du paquet.
++--------------------+
+	/usr/sbin/httpd: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), 
+	dynamically linked (uses shared libs), for GNU/Linux 2.6.32, BuildID	
+	[sha1]=ae0491c6bf6f6dc195554df81716bac27ff03c29, stripped
++---------------+
+|file /etc/httpd|  Ici, un répertoire de conf.
++---------------+
+	/etc/httpd: directory
+
++---------------+
+|whatis shutdown|  QUOI QUE C'EST SHUTDOWN ?
++---------------+
+	shutdown (8)         - Arrêter le système.
+	shutdown (2)         - Terminer une communication en full-duplex
+	shutdown (3p)        - shut down socket send and receive operations
++----------------+
+|whereis shutdown|  OK. MAIS QUOI QU'OU C'EST CE SHUTDOWN ?
++----------------+
+	shutdown: /usr/sbin/shutdown /usr/share/man/man2/shutdown.2.gz 
+	/usr/share/man/man3p/shutdown.3p.gz /usr/share/man/man8/shutdown.8.gz
++-----------------------+
+|file /usr/sbin/shutdown|  ICI, un lien symbolique vers le bon répertoire 
++-----------------------+  
+	/usr/sbin/shutdown: symbolic link to `../bin/systemctl'
+
++----------+
+|rpm -q ssh|  "Est-ce j'ai le SSH installé ?"
++----------+
+	le paquet ssh n'est pas installé
+
++------------------+
+|rpm -qa | grep ssh|  "Ok, je reformule. EST-CE QUE J'AI LE SSH INSTALLEEEEEEE ?" *crie
++------------------+
+	openssh-7.4p1-21.el7.x86_64
+	openssh-server-7.4p1-21.el7.x86_64
+	openssh-clients-7.4p1-21.el7.x86_64
+	libssh2-1.8.0-3.el7.x86_64
+
++-------------+
+|rpm -qc httpd|  liste des fichiers de conf associés à ce paquet !!!!!!!
++-------------+
+	/etc/httpd/conf.d/autoindex.conf
+	/etc/httpd/conf.d/userdir.conf
+	/etc/httpd/conf.d/welcome.conf
+	/etc/httpd/conf.modules.d/00-base.conf
+	/etc/httpd/conf.modules.d/00-dav.conf
+	/etc/httpd/conf.modules.d/00-lua.conf
+	/etc/httpd/conf.modules.d/00-mpm.conf
+	/etc/httpd/conf.modules.d/00-proxy.conf
+	/etc/httpd/conf.modules.d/00-systemd.conf
+	/etc/httpd/conf.modules.d/01-cgi.conf
+	/etc/httpd/conf/httpd.conf
+	/etc/httpd/conf/magic
+	/etc/logrotate.d/httpd
+	/etc/sysconfig/htcacheclean
+	/etc/sysconfig/httpd
+
++------------+
+|rpm -q httpd|  httpd --version mais en moins bien
++------------+
+	httpd-2.4.6-93.el7.centos.x86_64
+
++-------------+
+|rpm -qi httpd|  httpd --version mais en mieux
++-------------+
+	Name        : httpd
+	Version     : 2.4.6
+	Release     : 93.el7.centos
+	Architecture: x86_64
+	Install Date: mer. 16 sept. 2020 14:42:32 CEST
+	Group       : System Environment/Daemons
+	Size        : 9821040
+	License     : ASL 2.0
+	Signature   : RSA/SHA256, ven. 03 avril 2020 22:53:10 CEST, Key ID 24c6a8aeb5
+	Source RPM  : httpd-2.4.6-93.el7.centos.src.rpm
+	Build Date  : jeu. 02 avril 2020 15:15:44 CEST
+	Build Host  : x86-01.bsys.centos.org
+	Relocations : (not relocatable)
+	Packager    : CentOS BuildSystem <http://bugs.centos.org>
+	Vendor      : CentOS
+	URL         : http://httpd.apache.org/
+	Summary     : Apache HTTP Server
+	Description :
+	The Apache HTTP Server is a powerful, efficient, and extensible
+	web server.
+
++------------+
+|rpm -V httpd|  FAIT LA LISTE DES FICHIERS DE CONF MODIFIES DEPUIS L'INSTALL !!!!
++------------+
+
++-------------------------------------+  Liste des miroirs des serveurs de dépôts de 
+|vim /etc/yum.repos.d/CentOS-Base.repo|  fichiers. Un "yum update" ira parcourir les 
++-------------------------------------+  repos déclarés dans la section "update" de ce
+					 fichier, par ex.
+
++---------------------------+  Donne accès aux repositories EntrepriseLinux, ça 
+|yum -y install epel-release|  complète les dépôts par défaut pour CentOS
++---------------------------+
+
++----------------+  La commande php marchait sur une autre machine mais là non --'
+|yum provides php|  "Tu n'aurais pas un paquet qui utilise cette commande dans tes 
++----------------+  dépôts ?"
+	Modules complémentaires chargés : fastestmirror, langpacks
+	Loading mirror speeds from cached hostfile
+	 * base: fr2.rpmfind.net
+	 * epel: mirrors.ircam.fr
+	 * extras: centos.crazyfrogs.org
+	 * updates: mirrors.ircam.fr
+	php-5.4.16-48.el7.x86_64 : PHP scripting language for creating dynamic websites
+
++-----------------------------+
+|essayer figlet, sl et cowsay.|  Moi du présent de mon futur, regarde ça  
++-----------------------------+  pour moi du passé stp
+
++------------------+  
+|yum search eclipse|  On me demande l'ide eclipse mais yum install eclipse marche pas
++------------------+
+	Modules complémentaires chargés : fastestmirror, langpacks
+	Loading mirror speeds from cached hostfile
+	 * base: fr2.rpmfind.net
+	 * epel: mirrors.ircam.fr		                                             
+	 * extras: centos.crazyfrogs.org      
+	 * updates: mirrors.ircam.fr		         
+	============================= N/S matched: eclipse ============================
+	eclipse-filesystem.noarch : Eclipse Platform Filesystem Layout
+	ecj.x86_64 : Eclipse Compiler for Java
+		+--------------------------------------+
+		|Ici, on voit qu'il n'est pas proposé !|
+		+--------------------------------------+
+
++------------------------------------------------------------------------------------+
+|Ceci a permis l'installation de webmin avec la résolution des dépendances par yum = |
++------------------------------------------------------------------------------------+
+	sudo bash
+
+	(echo "[Webmin]
+	name=Webmin Distribution Neutral
+	baseurl=http://download.webmin.com/download/yum
+	enabled=1
+	gpgcheck=1
+	gpgkey=http://www.webmin.com/jcameron-key.asc" >/etc/yum.repos.d/webmin.repo;
+	yum -y install webmin)
+
++-------------------+
+|more /var/log/dmesg|  Messages du noyau
++-------------------+
+
++-----------------------------------------+
+|grep sda /var/log/dmesg | grep -v SELinux|  Messages du noyau concernant le disque sda
++-----------------------------------------+
+
++---------------------------+
+|grep "user" /var/log/secure|  Informations relatives à un user donné 
++---------------------------+  (connexions par ex)
+
++----------------------------+
+|last -f /var/log/btmp | more|  Affiche les connexions des users
++----------------------------+
+	toto tty3 Fri Apr 12 16:45 still logged in
+	bob tty4 Fri Apr 12 16:44 - 16:44 (00:00)
+
++-----------------+  Fichier de conf du logiciel de gestion des log système, rsyslog
+|/etc/rsyslog.conf|  Utile pour gérer les logs, affecter tel fichier à tels logs
++-----------------+  de tel programme etc
+	Nécéssite un "systemctl restart rsyslog" pour appliquer les changements.
+
++-------------------------------------------+  Permet de tester la configuration des
+|logger -p cat.sev -t flag -f file "message"|  logs. 
++-------------------------------------------+
+	Exemples : 
+		logger -p ftp.info "Message information pour ftp"
+			Le message sera écrit dans le log associé à ftp.info dans
+			syslog.conf
+		logger -p ftp.info -t $USER "Message information pour ftp"
+			Message plus nom d’utilisateur seront rangés dans le log
+			associé à ftp.info dans syslog.conf
+
++-----------------------+
+|vim /etc/log/monjournal|
++-----------------------+
+	/var/log/monjournal.log {
+        daily
+        rotate 7
+        size 10k
+        ifempty}
+	
+	On teste avec = logger -p user.info -t $USER "Message de test pour user.info"
+
++---------+
+|nmcli dev|
++---------+
+DEVICE      TYPE      STATE                                         CONNECTION
+enp0s3      ethernet  connecté                                      enp0s3
+virbr0      bridge    connecté                                      virbr0
+enp0s8      ethernet  connexion (obtention de la configuration IP)  Connexion filaire 1
+lo          loopback  non-géré                                      --
+virbr0-nic  tun       non-géré                                      --
+
++---------+
+|nmcli con|
++---------+
+NAME                 UUID                                  TYPE      DEVICE
+Connexion filaire 1  89eb9159-c7d0-399d-9bb1-02c617740b67  ethernet  enp0s8
+enp0s3               2130add6-d51c-498a-9f30-3e1eb626ae21  ethernet  enp0s3
+virbr0               51668a88-b49e-464f-9747-dc6891933d8b  bridge    virbr0
+
++---------------------------------+
+|cd /etc/sysconfig/network-scripts|  Répertoire des fichiers de conf réseau
++---------------------------------+
+
+	+----------------+
+	|vim ifcfg-enp0s3|
+	+----------------+
+		TYPE="Ethernet"
+		BOOTPROTO="dhcp"
+		DEFROUTE="yes"
+		PEERDNS="yes"
+		PEERROUTES="yes"
+		IPV4_FAILURE_FATAL="no"
+		IPV6INIT="yes"
+		IPV6_AUTOCONF="yes"
+		IPV6_DEFROUTE="yes"
+		IPV6_PEERDNS="yes"
+		IPV6_PEERROUTES="yes"
+		IPV6_FAILURE_FATAL="no"
+		NAME="enp0s3"
+		UUID="34105650-8399-4196-9c86-13d71e8a780e"
+		DEVICE="enp0s3"
+		ONBOOT="yes"
+
++-----------+
+|ifup enp0s3|  Active la connexion si elle ne l'est pas
++-----------+
+
++-------------+
+|ifdown enp0s3|	 Déconfigure la connexion !
++-------------+
+
++-------------------------+
+|systemctl restart network|  Redémarre le service réseau pour appliquer les modifs
++-------------------------+
+
++----+
+|ip r|  Affiche la table de routage
++----+
+
++---------+
+|ip n show|  Affiche la table ARP
++---------+
+
++--------------+
+|vim /etc/hosts|  Gestion des associations ip -> nom de domaine, localement.
++--------------+
+	127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+	::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+	10.20.30.64     centos1
+	10.20.30.77     centos2
+	10.20.30.89     mint1
+	
+	Ceci fonctionne bien, pour preuve :
+	+-------------------------------------------------------+
+	|[lucky@u43 ~]$ hostname				|
+	|u43							|
+	|[lucky@u43 ~]$ ssh lucky@centos2			|
+	|lucky@centos2's password:				|
+	|Last login: Thu Sep 17 12:51:36 2020 from 10.20.30.128 |
+	|[lucky@u43CentOS2 ~]$ hostname				|
+	|u43CentOS2						|
+	|[lucky@u43CentOS2 ~]$					|
+	+-------------------------------------------------------+
+
++---------------------------------------------------------+
+|[lucky@u43 ~]$ touch fichier$(date +%Y%m%d)		  |
+|[lucky@u43 ~]$ ls			  		  |
+|fichier20200917					  |
++---------------------------------------------------------+
+
++---------------+
+|chronyc sources|  Gestion du service de temps sous CentOS 7
++---------------+
+	210 Number of sources = 4
+	MS Name/IP address         Stratum Poll Reach LastRx Last sample 
+	===============================================================================
+	^+ www.almaprovence.fr           3   9   377   277   -380us[ -407us] +/-   41ms
+	^* moz75-1-78-194-78-49.fbx>     3   9   377   153   +371us[ +343us] +/-   28ms
+	^- ntp-1.arkena.net              2   7   377   101  +5635us[+5635us] +/-   32ms
+	^- ntp0.dillydally.fr            2   7   377    38   -866us[ -866us] +/-   64ms
+
++-------+
+|ntpq -p|  Gestion du service de temps sous Linux Mint
++-------+
+	     remote           refid      st t when poll reach   delay   offset  jitter
+	==============================================================================
+	 0.ubuntu.pool.n .POOL.          16 p    -   64    0    0.000    0.000   0.000
+	 1.ubuntu.pool.n .POOL.          16 p    -   64    0    0.000    0.000   0.000
+	 2.ubuntu.pool.n .POOL.          16 p    -   64    0    0.000    0.000   0.000
+	 3.ubuntu.pool.n .POOL.          16 p    -   64    0    0.000    0.000   0.000
+	 ntp.ubuntu.com  .POOL.          16 p    -   64    0    0.000    0.000   0.000
+	+pugot.canonical 140.203.204.77   2 u  119  128  377   15.101    1.921   1.086
+	+time.cloudflare 10.19.9.101      3 u  125  128  377    8.164   -0.503   3.900
+	+router-vzb.serv 5.196.192.58     3 u   72  128  377    8.726   -0.061   3.625
+	*bigbox.lazytype 242.71.143.169   2 u   70  128  367   12.092   -0.085   4.621
+
++---------------------+
+|systemctl status sshd|
++---------------------+
+	● sshd.service - OpenSSH server daemon
+   Loaded: loaded (/usr/lib/systemd/system/sshd.service; enabled;  vendor preset: enabled)
+   Active: active (running) since jeu. 2020-09-17 09:07:15 CEST;  5h 40min ago
+     Docs: man:sshd(8)
+           man:sshd_config(5)
+ Main PID: 1403 (sshd)
+    Tasks: 1
+   CGroup: /system.slice/sshd.service
+           └─1403 /usr/sbin/sshd -D
+	sept. 17 09:10:47 u43 sshd[3428]: reverse mapping checking getadd rinfo for
+	utilisa-jvtufct.cfi.local [10.20.30.128] failed - POSSI BLE BREAK-IN ATTEMPT!
+	sept. 17 09:10:49 u43 sshd[3428]: Accepted password for lucky fro m
+	10.20.30.128 port 60956 ssh2
+	sept. 17 11:28:29 u43 sshd[6111]: reverse mapping checking getadd rinfo for
+	utilisa-jvtufct.cfi.local [10.20.30.128] failed - POSSI BLE BREAK-IN ATTEMPT!
+	sept. 17 11:28:31 u43 sshd[6111]: Accepted password for lucky fro m
+	10.20.30.128 port 62799 ssh2
+	sept. 17 11:28:55 u43 sshd[6195]: reverse mapping checking getadd rinfo for
+	utilisa-jvtufct.cfi.local [10.20.30.128] failed - POSSI BLE BREAK-IN ATTEMPT!
+	sept. 17 11:28:57 u43 sshd[6195]: Accepted password for lucky fro m
+	10.20.30.128 port 62801 ssh2
+	sept. 17 14:18:33 u43 sshd[10173]: Accepted password for root fro m 10.20.30.89
+	port 51784 ssh2
+	sept. 17 14:19:44 u43 sshd[10254]: Accepted password for root fro m 10.20.30.77
+	port 56094 ssh2
+	sept. 17 14:20:38 u43 sshd[10320]: Accepted password for root fro m 10.20.30.77
+	port 56096 ssh2
+	sept. 17 14:25:22 u43 sshd[10446]: Accepted password for root fro m 10.20.30.77
+	port 56098 ssh2
+
++--------------------------+
+|Accéder en ftp à un site :|
+|ping nomdedomaine	   |
+|	   (ça ramène l'ip)|
+|sftp ipsite		   |
++--------------------------+
+
++----------------+
+|Copies distantes|
++----------------+
+	[lucky@u43 ~]$ scp fic1 mint1:/home/lucky/fic1.bis ...
+	[lucky@u43 ~]$ scp fic1 lucky@mint1:/home/lucky/fic1.ter ...
+	[lucky@u43 ~]$ scp lucky@mint1:/home/lucky/fic2 ./fic2.bis ...
+
++------------------------------------------+
+|[lucky@u43CentOS2 ~]$ ssh lucky@mint1 "ls"|  Exécute la commande "ls" à distance
++------------------------------------------+  
+	Ici, chez mint1 à partir du serveur CentOS2
+	mint1 est en réalité 10.20.30.89, grâce à une déclaration dans le /etc/hosts
+
++--------------------------------------------------+  Supprime tous les jpgs des 
+|find  /répertoire_de_depart  -name "*.jpg" -delete|  sous-répertoires du répertoire 
++--------------------------------------------------+  donné et de lui-même
