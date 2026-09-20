@@ -1,0 +1,248 @@
+# ------------------------
+# Alias
+# ------------------------
+for a in back front majCLIENT sonarback keycloak Projet2 tomcat Projet2b Projet2f Projet3 Projet3b Projet3t Projet3clean archive archiveparade nas runback commit token tagharbor tagsonarharbor; do
+  unalias "$a" 2>/dev/null
+done
+
+alias ll='ls -lisa'
+alias prune='git fetch --prune origin'
+alias abort='git reset --hard'
+alias abortcommit='git reset --soft HEAD~1'
+alias runfront='yarn run start'
+alias sonar='./mvnw clean verify sonar:sonar -Dsonar.login=admin -Dsonar.password=Projet1'
+alias tre="git log --all --decorate --graph --date=format:'%Y/%m/%d %H:%M:%S' --pretty=format:'%C(auto)%h %C(brightblue)%d%Creset %C(green)%cd %C(240)[%cn]%n%w(10000,4,4)%s%n%b%w(0)'"
+# Diff complet entre HEAD et HEAD^
+alias modifs='git diff HEAD^'
+
+# Prompt propre
+PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]$(__git_ps1 " (%s)")\$ '
+
+# Titre propre
+set_title() {
+  printf '\033]0;%s\007' "$*"
+}
+
+# Répertoires projets
+Projet1_BACK_DIR="$HOME/dev/Projet1_back/backend-web"
+Projet1_FRONT_DIR="$HOME/dev/Projet1_front/frontend"
+MIGRATION_CLIENT_DIR="$HOME/dev/migration-src-vers-CLIENT"
+Projet2_DIR="$HOME/dev/Projet2"
+Projet3_DIR="/applis/orchestration"
+Projet3_DIR="$HOME/dev/Projet3/projet4_services_sources"
+TOMCAT_DIR="$HOME/.sdkman/candidates/tomcat/current"
+
+# Projet1
+back() {
+  cd "$Projet1_BACK_DIR" || return
+  set_title "BACK"
+}
+front() {
+  cd "$Projet1_FRONT_DIR" || return
+  set_title "FRONT"
+}
+runback() {
+  back || return
+  ./scripts/start-dev.sh
+}
+commit() {
+  yarn run prettier:format
+  git add --all ./*
+  git restore --staged src/test/resources/config/application.properties
+  git restore --staged src/main/resources/config/application.properties
+  git status
+}
+sonarback() {
+  back || return
+  set_title "SONAR"
+  sudo service docker start
+  sudo sysctl -p
+  docker compose -f src/main/docker/sonar.yml up -d
+  docker ps
+}
+keycloak() {
+  back || return
+  set_title "KEYCLOAK"
+  sudo service docker start
+  docker compose -f src/main/docker/keycloak.yml up
+}
+majCLIENT() {
+  cd "$MIGRATION_CLIENT_DIR" || return
+  set_title "MAJ CLIENT"
+  echo "#########################"
+  echo "prune + branche feat/init"
+  echo "#########################"
+}
+# Les tokens sont stockés dans ~/.tokens.env
+#TOKEN_ACCESS_CLIENT_BACKEND_WEB=...
+#TOKEN_ACCESS_SULLY_FRONTEND=...
+#TOKEN_ACCESS_SULLY=...
+#TOKEN_ACCESS_CLIENT_FRONTEND=...
+token() {
+  local tokens_env_file="$HOME/.tokens.env"
+  if [ ! -f "$tokens_env_file" ]; then
+    echo "Fichier de tokens introuvable : $tokens_env_file"
+    return 1
+  fi
+  set -a
+  . "$tokens_env_file"
+  set +a
+  ./ci/migrate.sh
+}
+
+# Projet2
+Projet2() {
+  cd "$Projet2_DIR" || return
+  set_title "Projet2"
+  echo "#########################"
+  echo "Projet2 : fais un prune"
+  echo "#########################"
+}
+Projet2b() {
+  Projet2 || return
+  set_title "Projet2 BACK"
+  rm -rf "$HOME/dev/Projet2/Projet2-desktop-api/Projet2-rest/target/"
+  mvn clean verify install -U -Passemblage -Dlocal
+}
+Projet2f() {
+  Projet2 || return
+  set_title "Projet2 FRONT"
+  cd Projet2-desktop-web || return
+  node_modules/.bin/grunt server
+}
+
+# Projet3
+Projet3() {
+  export COMPOSE_FILE=docker-compose.yml:docker-compose-build.yml:docker-compose-dev.yml
+  cd "$Projet3_DIR" || return
+  set_title "Projet3"
+}
+Projet3run() {
+  Projet3 || return
+  docker compose up -d --build
+}
+
+Projet3uploaderlog() {
+  Projet3 || return
+  docker compose -f docker-compose.yml -f docker-compose-build.yml -f docker-compose-dev.yml logs --tail=2000 uploader
+}
+
+Projet3jenkinslog() {
+  Projet3 || return
+  docker compose -f docker-compose.yml -f docker-compose-build.yml -f docker-compose-dev.yml logs --tail=2000 jenkins
+}
+
+Projet3downloaderlog() {
+  Projet3 || return
+  docker compose -f docker-compose.yml -f docker-compose-build.yml -f docker-compose-dev.yml logs --tail=2000 cloud-downloader
+}
+
+Projet3proxylog() {
+  Projet3 || return
+  docker compose -f docker-compose.yml -f docker-compose-build.yml -f docker-compose-dev.yml logs --tail=2000 reverse-proxy
+}
+
+# Projet3
+Projet3() {
+  cd "$Projet3_DIR" || return
+  set_title "Projet3"
+  echo "#########################"
+  echo "Projet3 : fais un prune"
+  echo "#########################"
+}
+Projet3b() {
+  mvn clean install -U -DskipTests
+}
+Projet3t() {
+  mvn clean compile test
+}
+Projet3clean() {
+  Projet3 || return
+  rm -rf ./projet4-bo/logs
+  rm -rf ./projet4-bo/target
+  rm -rf ./projet4-ws/target
+  rm -rf ./projet4-ws/logs
+}
+
+# Tomcat / ArcGIS
+tomcat() {
+  cd "$TOMCAT_DIR" || return
+  set_title "TOMCAT"
+}
+ajout_var_tomcat() {
+  local var_name="$1"
+  local value="$2"
+  local current="${!var_name:-}"
+  case ":$current:" in
+    *":$value:"*) ;;
+    *) export "$var_name=${current:+$current:}$value" ;;
+  esac
+}
+export ARCGISRUNTIMESDKJAVA="/opt/arcgis-runtime-sdk-java"
+export ARCGISRUNTIMESDKJAVA_100_6_0="$ARCGISRUNTIMESDKJAVA"
+ajout_var_tomcat CLASSPATH "$HOME/.sdkman/candidates/tomcat/9.0.56/webapps/Projet2-rest/WEB-INF/lib/*"
+ajout_var_tomcat CLASSPATH "$HOME/.sdkman/candidates/tomcat/9.0.56/lib/*"
+ajout_var_tomcat LD_LIBRARY_PATH "$ARCGISRUNTIMESDKJAVA/jniLibs/LX64"
+ajout_var_tomcat PATH "$ARCGISRUNTIMESDKJAVA/bin"
+export CHROME_BIN="/usr/bin/google-chrome"
+
+# Harbor / Docker registry
+tagharbor() {
+  curl -s -u "login:MDP" "https://harbor-cds.domaineEntreprise.fr/v2/proxy_cache/library/maven/tags/list" \
+    | jq -r '.tags[]' \
+    | grep 17
+}
+tagsonarharbor() {
+  curl -s -u "login:MDP" "https://harbor-cds.domaineEntreprise.fr/v2/proxy_cache/sonarsource/sonar-scanner-cli/tags/list" \
+    | jq -r '.tags[]'
+}
+
+# Git / fichiers
+# Pour remettre un git checkout -B qui a reset
+# git reflog show fix/CLIENTTMASIG-2886
+# git reset --hard fix/CLIENTTMASIG-2886@{1}
+archive() {
+  git fsck --lost-found \
+    | grep 'dangling blob' \
+    | awk '{print $3}' \
+    | while read -r sha; do
+        git show "$sha" | batcat -p
+      done
+}
+archiveparade() {
+  tar -czvf parade.tar.gz --exclude='*/node_modules/*' * .[!.]* ..?*
+}
+
+# NAS
+nas() {
+  if ! dpkg -s nfs-common >/dev/null 2>&1; then
+    sudo apt update
+    sudo apt install -y nfs-common
+  fi
+  sudo mkdir -p /NAS
+  if ! grep -q '^vm1\.domaineEntreprise\.fr:/NAS[[:space:]]\+/NAS[[:space:]]\+nfs' /etc/fstab; then
+    echo 'vm1.domaineEntreprise.fr:/NAS /NAS nfs defaults,_netdev 0 0' | sudo tee -a /etc/fstab
+  fi
+  sudo mount -a
+}
+
+# Hosts
+ajout_hote() {
+  local ip="$1"
+  local host="$2"
+  if grep -Eq "^[[:space:]]*$ip[[:space:]]+$host([[:space:]]|$)" /etc/hosts; then
+    return 0
+  fi
+  echo "$ip $host" | sudo tee -a /etc/hosts >/dev/null
+  echo "Ajouté : $ip $host"
+}
+ajout_hotes() {
+  ajout_hote "10.0.0.1" "vm1"
+  ajout_hote "10.0.0.2" "vm2"
+  ajout_hote "10.0.0.3" "vm3"
+  ajout_hote "10.0.0.4" "vm4"
+  ajout_hote "10.0.0.5" "vm5"
+}
+
+# Démarrage 
+ajout_hotes
