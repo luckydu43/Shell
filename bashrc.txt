@@ -1,7 +1,7 @@
 # ------------------------
 # Alias
 # ------------------------
-for a in back front majCLIENT sonarback keycloak Projet2 tomcat Projet2b Projet2f Projet3 Projet3b Projet3t Projet3clean archive archiveparade nas runback commit token tagharbor tagsonarharbor; do
+for a in ll prune abort abortcommit runfront sonar tre modifs; do
   unalias "$a" 2>/dev/null
 done
 
@@ -16,7 +16,7 @@ alias tre="git log --all --decorate --graph --date=format:'%Y/%m/%d %H:%M:%S' --
 alias modifs='git diff HEAD^'
 
 # Prompt propre
-PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]$(__git_ps1 " (%s)")\$ '
+PS1="${COLOR_USER}\u@\h${COLOR_RESET}:${COLOR_PATH}\w${COLOR_GIT}"'$(__git_ps1 " (%s)")'"${COLOR_RESET}\$ "
 
 # Titre propre
 set_title() {
